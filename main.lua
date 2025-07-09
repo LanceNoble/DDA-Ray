@@ -120,3 +120,4 @@ function love.draw()
     love.graphics.setColor(1, 0, 0)
     love.graphics.circle("fill", playerX, playerY, radius)
 end
+
