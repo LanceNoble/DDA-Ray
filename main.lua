@@ -24,7 +24,7 @@ local gridX2 = gridX1 + tileMapW * tileSize
 local gridY2 = gridY1 + tileMapH * tileSize
 
 local playerRad = 10
-local playerSpd = 100000
+local playerSpd = 1
 local playerX = love.graphics.getWidth() * 0.5
 local playerY = love.graphics.getHeight() * 0.5
 local playerUnitX = (playerX - gridX1) / tileSize + 1
@@ -55,28 +55,33 @@ function love.update(dt)
     local playerOffDistance = math.sqrt(playerOffX * playerOffX + playerOffY * playerOffY)
     if playerOffDistance ~= 0 then
         playerOffX = playerOffX / playerOffDistance * playerSpd
-        playerOffY = playerOffY / playerOffDistance * playerSpd
-
-        local ray = utils.castRay(playerUnitX, playerUnitY, playerOffX, playerOffY, tileMap)
-        local xRay = ray[1] * tileSize
-        local yRay = ray[2] * tileSize
-        if math.abs(xRay) < math.abs(playerOffX) then
-            if playerOffX < 0 then
-                playerX = playerX + xRay + 0.1
+        if playerOffX ~= 0 then
+            local xRay = utils.castRay(playerUnitX, playerUnitY, playerOffX, 0, tileMap)
+            if math.abs(xRay[1] * tileSize) < math.abs(playerOffX) then
+                if playerOffX < 0 then
+                    playerX = playerX + xRay[1] * tileSize + 0.1
+                else
+                    playerX = playerX + xRay[1] * tileSize - 0.1
+                end
             else
-                playerX = playerX + xRay - 0.1
+                playerX = playerX + playerOffX
             end
-        else
-            playerX = playerX + playerOffX
+            playerUnitX = (playerX - gridX1) / tileSize + 1
         end
-        if math.abs(yRay) < math.abs(playerOffY) then
-            if playerOffY < 0 then
-                playerY = playerY + yRay + 0.1
+
+        playerOffY = playerOffY / playerOffDistance * playerSpd
+        if playerOffY ~= 0 then
+            local yRay = utils.castRay(playerUnitX, playerUnitY, 0, playerOffY, tileMap)
+            if math.abs(yRay[2] * tileSize) < math.abs(playerOffY) then
+                if playerOffY < 0 then
+                    playerY = playerY + yRay[2] * tileSize + 0.1
+                else
+                    playerY = playerY + yRay[2] * tileSize - 0.1
+                end
             else
-                playerY = playerY + yRay - 0.1
+                playerY = playerY + playerOffY
             end
-        else
-            playerY = playerY + playerOffY
+            playerUnitY = (playerY - gridY1) / tileSize + 1
         end
     end
 
@@ -86,9 +91,6 @@ function love.update(dt)
     elseif love.mouse.isDown(2) and mouseX > gridX1 and mouseX < gridX2 and mouseY > gridY1 and mouseY < gridY2 then
         tileMap[math.floor((mouseY - gridY1) / tileSize) + 1][math.floor((mouseX - gridX1) / tileSize) + 1] = 0
     end
-
-    playerUnitX = (playerX - gridX1) / tileSize + 1
-    playerUnitY = (playerY - gridY1) / tileSize + 1
 end
 
 function love.draw()
@@ -111,7 +113,12 @@ function love.draw()
         love.graphics.line(x * tileSize + gridX1, gridY1, x * tileSize + gridX1, gridY2)
     end
 
-    local pts = utils.castRay(playerUnitX, playerUnitY, mouseX - playerX, mouseY - playerY, tileMap)
+    local pts = { 0, 0 }
+    local playerToMouseX = mouseX - playerX
+    local playerToMouseY = mouseY - playerY
+    if playerToMouseX ~= 0 or playerToMouseY ~= 0 then
+        pts = utils.castRay(playerUnitX, playerUnitY, playerToMouseX, playerToMouseY, tileMap)
+    end
 
     love.graphics.setColor(0, 0, 1)
     love.graphics.line(playerX, playerY,

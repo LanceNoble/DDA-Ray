@@ -2,9 +2,6 @@ local utils = {}
 
 function utils.castRay(x, y, offX, offY, map)
     local dist = math.sqrt(offX * offX + offY * offY)
-    if dist == 0 or dist ~= dist then
-        return { 0, 0 }
-    end
 
     local xDir = offX / dist
     local yDir = offY / dist
