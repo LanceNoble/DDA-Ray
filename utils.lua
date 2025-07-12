@@ -1,41 +1,47 @@
 local utils = {}
 
-function utils.castRay(x, y, offX, offY, map)
-    local dist = math.sqrt(offX * offX + offY * offY)
+function utils.castRay(x, y, radians, map)
+    local xDirection = math.cos(radians)
+    local yDirection = math.sin(radians)
 
-    local xDir = offX / dist
-    local yDir = offY / dist
+    local distancePerX = 1 / math.abs(xDirection)
+    local distancePerY = 1 / math.abs(yDirection)
 
-    local distPerX = dist / math.abs(offX)
-    local distPerY = dist / math.abs(offY)
-
-    local xDist = (math.ceil(x) - x) * distPerX
-    if offX < 0 then
-        xDist = (x - math.floor(x)) * distPerX
+    local xDistance
+    if xDirection < 0 then
+        xDistance = (x - math.floor(x)) * distancePerX
+    else
+        xDistance = (math.ceil(x) - x) * distancePerX
     end
 
-    local yDist = (math.ceil(y) - y) * distPerY
-    if offY < 0 then
-        yDist = (y - math.floor(y)) * distPerY
+    local yDistance
+    if yDirection < 0 then
+        yDistance = (y - math.floor(y)) * distancePerY
+    else
+        yDistance = (math.ceil(y) - y) * distancePerY
     end
 
-    local smallerDist
+    local rayDistance
     repeat
-        smallerDist = xDist
-        if xDist > yDist or offX == 0 then
-            smallerDist = yDist
-            yDist = yDist + distPerY
+        if xDistance < yDistance or yDistance ~= yDistance then
+            rayDistance = xDistance
+            xDistance = xDistance + distancePerX
         else
-            xDist = xDist + distPerX
+            rayDistance = yDistance
+            yDistance = yDistance + distancePerY
         end
 
-        -- Add yDir and xDir at the end so the ray does not undershoot the tile it was supposed to hit
-        -- Multiply yDir and xDir by 0.1 so the ray does not overshoot the tile it was supposed to hit
-        local i = math.floor(y + yDir * smallerDist + yDir * 0.1)
-        local j = math.floor(x + xDir * smallerDist + xDir * 0.1)
-    until i < 1 or i > #map or j < 1 or j > #map[1] or map[i][j] == 1
+        -- Add yDirection and xDirection at the end so the ray does not undershoot the tile it was supposed to hit
+        -- Multiply yDirection and xDirection by 0.1 so the ray does not overshoot the tile it was supposed to hit
+        local i = y + yDirection * rayDistance + yDirection * 0.01
+        local j = x + xDirection * rayDistance + xDirection * 0.01
 
-    return { xDir * smallerDist, yDir * smallerDist }
+        -- Stop ray from clipping through diagonal walls
+        local k = y + yDirection * rayDistance
+        local l = x + xDirection * rayDistance
+    until i < 1 or i > #map or j < 1 or j > #map[1] or map[math.floor(i)][math.floor(l)] == 1 or map[math.floor(k)][math.floor(j)] == 1
+
+    return { xDirection * rayDistance, yDirection * rayDistance }
 end
 
 return utils
