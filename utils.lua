@@ -44,4 +44,19 @@ function utils.castRay(x, y, radians, map)
     return { xDirection * rayDistance, yDirection * rayDistance }
 end
 
+function utils.emanateRays(x, y, upperRadians, lowerRadians, numLevels, map)
+    if numLevels == 0 then
+        return {}
+    end
+    local centerRadians = (upperRadians + lowerRadians) * .5
+    local rays = { utils.castRay(x, y, centerRadians, map) }
+    for index, value in ipairs(utils.emanateRays(x, y, centerRadians, upperRadians, numLevels - 1, map)) do
+        table.insert(rays, value)
+    end
+    for index, value in ipairs(utils.emanateRays(x, y, centerRadians, lowerRadians, numLevels - 1, map)) do
+        table.insert(rays, value)
+    end
+    return rays
+end
+
 return utils
