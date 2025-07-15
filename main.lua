@@ -1,6 +1,5 @@
 local utils = require("utils")
 
-local tileSize = 30
 local tileMapW = 20
 local tileMapH = 20
 local tileMap = {}
@@ -18,131 +17,108 @@ end
 
 love.window.setMode(1280, 720)
 
-local gridX1 = love.graphics.getWidth() * 0.5 - tileMapW * tileSize * 0.5
-local gridY1 = love.graphics.getHeight() * 0.5 - tileMapH * tileSize * 0.5
-local gridX2 = gridX1 + tileMapW * tileSize
-local gridY2 = gridY1 + tileMapH * tileSize
+local player = {
+    fov = math.pi * .5,
+    moveSpd = .25,
+    lookSpd = .025,
+    lookAngle = 0,
+    x = 11,
+    y = 11
+}
 
-local playerRad = 10
-local playerSpd = 2
-local playerAngle = math.pi * 0.25
-local playerX = love.graphics.getWidth() * 0.5
-local playerY = love.graphics.getHeight() * 0.5
-local playerUnitX = (playerX - gridX1) / tileSize + 1
-local playerUnitY = (playerY - gridY1) / tileSize + 1
-
-local mouseX
-local mouseY
+local lookRays = {}
+for i = 1, 1000 do
+    lookRays[i] = { 0, 0 }
+end
 
 love.graphics.setLineWidth(2)
 
 function love.update(dt)
     if love.keyboard.isDown("j") then
-        playerAngle = playerAngle - 0.01
+        player.lookAngle = player.lookAngle - player.lookSpd
     end
     if love.keyboard.isDown("l") then
-        playerAngle = playerAngle + 0.01
+        player.lookAngle = player.lookAngle + player.lookSpd
     end
 
-    local playerOffX = 0
-    local playerOffY = 0
+    local forwardDir = { math.cos(player.lookAngle), math.sin(player.lookAngle) }
+    local leftDir = utils.rotate(forwardDir[1], forwardDir[2], -math.pi * .5)
+    local downDir = utils.rotate(forwardDir[1], forwardDir[2], math.pi)
+    local rightDir = utils.rotate(forwardDir[1], forwardDir[2], math.pi * .5)
+
+    local dir = { 0, 0 }
 
     if love.keyboard.isDown("w") then
-        playerOffY = playerOffY - playerSpd
+        dir[1] = dir[1] + forwardDir[1]
+        dir[2] = dir[2] + forwardDir[2]
     end
     if love.keyboard.isDown("a") then
-        playerOffX = playerOffX - playerSpd
+        dir[1] = dir[1] + leftDir[1]
+        dir[2] = dir[2] + leftDir[2]
     end
     if love.keyboard.isDown("s") then
-        playerOffY = playerOffY + playerSpd
+        dir[1] = dir[1] + downDir[1]
+        dir[2] = dir[2] + downDir[2]
     end
     if love.keyboard.isDown("d") then
-        playerOffX = playerOffX + playerSpd
+        dir[1] = dir[1] + rightDir[1]
+        dir[2] = dir[2] + rightDir[2]
     end
 
-    local playerOffDistance = math.sqrt(playerOffX * playerOffX + playerOffY * playerOffY)
+    local playerOffDistance = math.sqrt(dir[1] * dir[1] + dir[2] * dir[2])
 
-    playerOffX = playerOffX / playerOffDistance * playerSpd
+    local playerOffX = dir[1] / playerOffDistance
     if playerOffX == playerOffX and playerOffX ~= 0 then
-        local xRay
+        local ray
         if playerOffX < 0 then
-            xRay = utils.castRay(playerUnitX, playerUnitY, math.pi, tileMap)
+            ray = utils.castRay(player.x, player.y, math.pi, tileMap)
         else
-            xRay = utils.castRay(playerUnitX, playerUnitY, 0, tileMap)
+            ray = utils.castRay(player.x, player.y, 0, tileMap)
         end
-        if math.abs(xRay[1] * tileSize) < math.abs(playerOffX) then
+        if math.abs(ray[1]) < math.abs(playerOffX * player.moveSpd) then
             if playerOffX < 0 then
-                playerX = playerX + xRay[1] * tileSize + 0.1
+                player.x = player.x + ray[1] + .01
             else
-                playerX = playerX + xRay[1] * tileSize - 0.1
+                player.x = player.x + ray[1] - .01
             end
         else
-            playerX = playerX + playerOffX
+            player.x = player.x + playerOffX * player.moveSpd
         end
-        playerUnitX = (playerX - gridX1) / tileSize + 1
     end
 
-    playerOffY = playerOffY / playerOffDistance * playerSpd
+    local playerOffY = dir[2] / playerOffDistance
     if playerOffY == playerOffY and playerOffY ~= 0 then
-        local yRay
+        local ray
         if playerOffY < 0 then
-            yRay = utils.castRay(playerUnitX, playerUnitY, math.pi * 1.5, tileMap)
+            ray = utils.castRay(player.x, player.y, math.pi * 1.5, tileMap)
         else
-            yRay = utils.castRay(playerUnitX, playerUnitY, math.pi * 0.5, tileMap)
+            ray = utils.castRay(player.x, player.y, math.pi * 0.5, tileMap)
         end
-        if math.abs(yRay[2] * tileSize) < math.abs(playerOffY) then
+        if math.abs(ray[2]) < math.abs(playerOffY * player.moveSpd) then
             if playerOffY < 0 then
-                playerY = playerY + yRay[2] * tileSize + 0.1
+                player.y = player.y + ray[2] + .01
             else
-                playerY = playerY + yRay[2] * tileSize - 0.1
+                player.y = player.y + ray[2] - .01
             end
         else
-            playerY = playerY + playerOffY
+            player.y = player.y + playerOffY * player.moveSpd
         end
-        playerUnitY = (playerY - gridY1) / tileSize + 1
     end
 
-    mouseX, mouseY = love.mouse.getPosition()
-    if love.mouse.isDown(1) and mouseX > gridX1 and mouseX < gridX2 and mouseY > gridY1 and mouseY < gridY2 then
-        tileMap[math.floor((mouseY - gridY1) / tileSize) + 1][math.floor((mouseX - gridX1) / tileSize) + 1] = 1
-    elseif love.mouse.isDown(2) and mouseX > gridX1 and mouseX < gridX2 and mouseY > gridY1 and mouseY < gridY2 then
-        tileMap[math.floor((mouseY - gridY1) / tileSize) + 1][math.floor((mouseX - gridX1) / tileSize) + 1] = 0
+    for index, value in ipairs(lookRays) do
+        local radiansPerRay = player.fov / #lookRays
+        local startingAngle = player.lookAngle - player.fov * 0.5
+        lookRays[index] = utils.castRay(player.x, player.y, startingAngle + index * radiansPerRay, tileMap)
     end
 end
 
 function love.draw()
-    love.graphics.setColor(0, 1, 0)
-    for i = 1, tileMapH do
-        for j = 1, tileMapW do
-            if tileMap[i][j] == 1 then
-                love.graphics.rectangle("fill", gridX1 + 1 + (j - 1) * tileSize, gridY1 + 1 + (i - 1) * tileSize,
-                    tileSize - 2, tileSize - 2)
-            end
-        end
-    end
-
-    love.graphics.setColor(1, 1, 1)
-    for y = 0, tileMapH do
-        love.graphics.line(gridX1, y * tileSize + gridY1, gridX2, y * tileSize + gridY1)
-    end
-    for x = 0, tileMapW do
-        love.graphics.line(x * tileSize + gridX1, gridY1, x * tileSize + gridX1, gridY2)
-    end
-
-    local pts = { 0, 0 }
-    local playerToMouseX = mouseX - playerX
-    local playerToMouseY = mouseY - playerY
-    if playerToMouseX ~= 0 or playerToMouseY ~= 0 then
-        pts = utils.castRay(playerUnitX, playerUnitY, playerAngle, tileMap)
-        local mag = math.sqrt(pts[1] * pts[1] + pts[2] * pts[2])
-        local height = love.graphics.getHeight() / mag
+    for index, value in ipairs(lookRays) do
+        local rayDistance = math.sqrt(value[1] * value[1] + value[2] * value[2])
+        local height = love.graphics.getHeight() / rayDistance
+        local width = love.graphics.getWidth() / #lookRays
         local screenCenterY = love.graphics.getHeight() * 0.5
-        love.graphics.line(100, screenCenterY - height / 2, 100, screenCenterY + height / 2)
+        love.graphics.setColor(1 / rayDistance, 1 / rayDistance, 1 / rayDistance)
+        love.graphics.rectangle("fill", (index - 1) * width, screenCenterY - height * .5, width, height)
     end
-
-    love.graphics.setColor(0, 0, 1)
-    love.graphics.line(playerX, playerY, playerX + pts[1] * tileSize, playerY + pts[2] * tileSize)
-
-    love.graphics.setColor(1, 0, 0)
-    love.graphics.circle("fill", playerX, playerY, playerRad)
 end

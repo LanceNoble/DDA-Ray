@@ -44,4 +44,10 @@ function utils.castRay(x, y, radians, map)
     return { xDirection * rayDistance, yDirection * rayDistance }
 end
 
+function utils.rotate(x, y, rad)
+    local vec = { x, y }
+    local mat = { { math.cos(rad), -math.sin(rad) }, { math.sin(rad), math.cos(rad) } }
+    return { mat[1][1] * vec[1] + mat[1][2] * vec[2], mat[2][1] * vec[1] + mat[2][2] * vec[2] }
+end
+
 return utils
