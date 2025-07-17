@@ -15,7 +15,7 @@ for i = 1, tileMapH do
     end
 end
 
-love.window.setMode(1280, 720)
+love.window.setMode(1920, 1080)
 
 local player = {
     fov = math.pi * .5,
@@ -43,8 +43,6 @@ function love.update(dt)
 
     local forwardDir = { math.cos(player.lookAngle), math.sin(player.lookAngle) }
     local leftDir = utils.rotate(forwardDir[1], forwardDir[2], -math.pi * .5)
-    local downDir = utils.rotate(forwardDir[1], forwardDir[2], math.pi)
-    local rightDir = utils.rotate(forwardDir[1], forwardDir[2], math.pi * .5)
 
     local dir = { 0, 0 }
 
@@ -57,15 +55,15 @@ function love.update(dt)
         dir[2] = dir[2] + leftDir[2]
     end
     if love.keyboard.isDown("s") then
-        dir[1] = dir[1] + downDir[1]
-        dir[2] = dir[2] + downDir[2]
+        dir[1] = dir[1] - forwardDir[1]
+        dir[2] = dir[2] - forwardDir[2]
     end
     if love.keyboard.isDown("d") then
-        dir[1] = dir[1] + rightDir[1]
-        dir[2] = dir[2] + rightDir[2]
+        dir[1] = dir[1] - leftDir[1]
+        dir[2] = dir[2] - leftDir[2]
     end
 
-    local playerOffDistance = math.sqrt(dir[1] * dir[1] + dir[2] * dir[2])
+    local playerOffDistance = math.sqrt(dir[1] ^ 2 + dir[2] ^ 2)
 
     local playerOffX = dir[1] / playerOffDistance
     if playerOffX == playerOffX and playerOffX ~= 0 then
@@ -114,11 +112,21 @@ end
 
 function love.draw()
     for index, value in ipairs(lookRays) do
-        local rayDistance = math.sqrt(value[1] * value[1] + value[2] * value[2])
-        local height = love.graphics.getHeight() / rayDistance
+        local centerRay = utils.castRay(player.x, player.y, player.lookAngle, tileMap)
+
+        local centerRayDist = math.sqrt(centerRay[1] ^ 2 + centerRay[2] ^ 2)
+        local centerRayAngle = math.acos(centerRay[1] / centerRayDist)
+
+        local outerRayDist = math.sqrt(value[1] ^ 2 + value[2] ^ 2)
+        local outerRayAngle = math.acos(value[1] / outerRayDist)
+
+        local height = love.graphics.getHeight() / outerRayDist --* math.cos(outerRayAngle - centerRayAngle))
         local width = love.graphics.getWidth() / #lookRays
         local screenCenterY = love.graphics.getHeight() * 0.5
-        love.graphics.setColor(1 / rayDistance, 1 / rayDistance, 1 / rayDistance)
+        love.graphics.setColor(1 / outerRayDist, 1 / outerRayDist, 1 / outerRayDist)
         love.graphics.rectangle("fill", (index - 1) * width, screenCenterY - height * .5, width, height)
+        love.graphics.setColor(0, 0, 1 * .5)
+        love.graphics.rectangle("fill", (index - 1) * width, screenCenterY + height * .5, width,
+            love.graphics.getHeight() - screenCenterY + height * .5)
     end
 end
