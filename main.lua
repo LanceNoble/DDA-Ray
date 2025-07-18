@@ -27,7 +27,7 @@ local player = {
 }
 
 local lookRays = {}
-for i = 1, 1000 do
+for i = 1, love.graphics.getWidth() do
     lookRays[i] = { 0, 0 }
 end
 
@@ -111,16 +111,12 @@ function love.update(dt)
 end
 
 function love.draw()
+    local radiansPerRay = player.fov / #lookRays
+    local currentAngle = -radiansPerRay * #lookRays * .5
     for index, value in ipairs(lookRays) do
-        local centerRay = utils.castRay(player.x, player.y, player.lookAngle, tileMap)
-
-        local centerRayDist = math.sqrt(centerRay[1] ^ 2 + centerRay[2] ^ 2)
-        local centerRayAngle = math.acos(centerRay[1] / centerRayDist)
-
         local outerRayDist = math.sqrt(value[1] ^ 2 + value[2] ^ 2)
-        local outerRayAngle = math.acos(value[1] / outerRayDist)
-
-        local height = love.graphics.getHeight() / outerRayDist --* math.cos(outerRayAngle - centerRayAngle))
+        local height = love.graphics.getHeight() / (outerRayDist * math.cos(currentAngle))
+        currentAngle = currentAngle + radiansPerRay
         local width = love.graphics.getWidth() / #lookRays
         local screenCenterY = love.graphics.getHeight() * 0.5
         love.graphics.setColor(1 / outerRayDist, 1 / outerRayDist, 1 / outerRayDist)
