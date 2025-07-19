@@ -26,6 +26,8 @@ local player = {
     y = 11
 }
 
+local distanceToProjectionPlane = love.graphics.getWidth() * .5 / math.tan(player.fov * .5)
+
 local lookRays = {}
 for i = 1, love.graphics.getWidth() do
     lookRays[i] = { 0, 0 }
@@ -102,27 +104,25 @@ function love.update(dt)
             player.y = player.y + playerOffY * player.moveSpd
         end
     end
-
-    for index, value in ipairs(lookRays) do
-        local radiansPerRay = player.fov / #lookRays
-        local startingAngle = player.lookAngle - player.fov * 0.5
-        lookRays[index] = utils.castRay(player.x, player.y, startingAngle + index * radiansPerRay, tileMap)
-    end
 end
 
 function love.draw()
-    local radiansPerRay = player.fov / #lookRays
-    local currentAngle = -radiansPerRay * #lookRays * .5
-    for index, value in ipairs(lookRays) do
-        local outerRayDist = math.sqrt(value[1] ^ 2 + value[2] ^ 2)
-        local height = love.graphics.getHeight() / (outerRayDist * math.cos(currentAngle))
-        currentAngle = currentAngle + radiansPerRay
-        local width = love.graphics.getWidth() / #lookRays
+    for i = 1, #lookRays * .5 do
+        local angle = math.atan(math.sin(player.fov * .5) / (#lookRays * .5) * i / math.cos(player.fov * .5))
+        local ray = utils.castRay(player.x, player.y, player.lookAngle - angle, tileMap)
+        local height = love.graphics.getHeight() / (math.sqrt(ray[1] ^ 2 + ray[2] ^ 2) * math.cos(angle))
         local screenCenterY = love.graphics.getHeight() * 0.5
-        love.graphics.setColor(1 / outerRayDist, 1 / outerRayDist, 1 / outerRayDist)
-        love.graphics.rectangle("fill", (index - 1) * width, screenCenterY - height * .5, width, height)
-        love.graphics.setColor(0, 0, 1 * .5)
-        love.graphics.rectangle("fill", (index - 1) * width, screenCenterY + height * .5, width,
-            love.graphics.getHeight() - screenCenterY + height * .5)
+        local barWidth = love.graphics.getWidth() / #lookRays
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.rectangle("fill", (#lookRays * .5 - i) * barWidth, screenCenterY - height * .5, barWidth, height)
+    end
+    for i = 1, #lookRays * .5 do
+        local angle = math.atan(math.sin(player.fov * .5) / (#lookRays * .5) * i / math.cos(player.fov * .5))
+        local ray = utils.castRay(player.x, player.y, player.lookAngle + angle, tileMap)
+        local height = love.graphics.getHeight() / (math.sqrt(ray[1] ^ 2 + ray[2] ^ 2) * math.cos(angle))
+        local screenCenterY = love.graphics.getHeight() * 0.5
+        local barWidth = love.graphics.getWidth() / #lookRays
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.rectangle("fill", (#lookRays * .5 + i) * barWidth, screenCenterY - height * .5, barWidth, height)
     end
 end
