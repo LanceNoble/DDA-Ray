@@ -49,12 +49,13 @@ public class Main extends ApplicationAdapter {
 
         ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
         this.shape.begin(ShapeType.Filled);
-        this.shape.setColor(1, 1, 1, 1);
         float[] rays = player1.Look();
         for (int i = 0; i < rays.length; i++) {
             float height = Gdx.graphics.getHeight() / rays[i];
             float columnWidth = Gdx.graphics.getWidth() / rays.length;
             float screenCenterY = Gdx.graphics.getHeight() * (float) .5;
+            float shade = 1 / rays[i];
+            this.shape.setColor(shade, shade, shade, 1);
             this.shape.rect(i * columnWidth, screenCenterY - height * (float) .5, columnWidth, height);
         }
         this.shape.end();

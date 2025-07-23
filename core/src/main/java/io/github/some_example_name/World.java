@@ -17,6 +17,14 @@ public class World {
                 }
             }
         }
+        map[15][13] = 1;
+        map[13][13] = 1;
+        map[11][13] = 1;
+        map[9][13] = 1;
+        map[7][13] = 1;
+        map[5][13] = 1;
+        map[3][13] = 1;
+        map[1][13] = 1;
         spawnPoint = new Vector2((float) (width * 0.5), (float) (height * 0.5));
     }
 
